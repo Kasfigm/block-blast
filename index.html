@@ -208,6 +208,8 @@ let clone=null;
 let sensitivity=2; // 🔥 atur 1.5 - 3
 let lastX=0;
 let lastY=0;
+let posX=0;
+let posY=0;
 
 mini.addEventListener("mousedown",startDrag);
 mini.addEventListener("touchstart",startDrag,{passive:false});
@@ -224,11 +226,14 @@ document.body.appendChild(clone);
 const x=e.touches?e.touches[0].clientX:e.clientX;
 const y=e.touches?e.touches[0].clientY:e.clientY;
 
-lastX=x;
-lastY=y;
+posX = x-30;
+posY = y-30;
 
-clone.style.left=x-30+"px";
-clone.style.top=y-30+"px";
+clone.style.left = posX + "px";
+clone.style.top  = posY + "px";
+
+lastX = x;
+lastY = y;
 
 document.addEventListener("mousemove",moveAt);
 document.addEventListener("touchmove",moveAt,{passive:false});
@@ -237,17 +242,22 @@ document.addEventListener("touchend",drop);
 }
 
 function moveAt(e){
+e.preventDefault();
+
 const x=e.touches?e.touches[0].clientX:e.clientX;
 const y=e.touches?e.touches[0].clientY:e.clientY;
 
 const dx=(x-lastX)*sensitivity;
 const dy=(y-lastY)*sensitivity;
 
-clone.style.left=clone.offsetLeft+dx+"px";
-clone.style.top=clone.offsetTop+dy+"px";
+posX += dx;
+posY += dy;
 
-lastX=x;
-lastY=y;
+clone.style.left = posX + "px";
+clone.style.top  = posY + "px";
+
+lastX = x;
+lastY = y;
 
 const target=document.elementFromPoint(x,y);
 if(target&&target.classList.contains("cell")){
