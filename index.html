@@ -2,9 +2,42 @@
 <html>
 <head>
     <title>Block Blast</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #222;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(8, 40px);
+            grid-template-rows: repeat(8, 40px);
+            gap: 4px;
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            background: #444;
+        }
+    </style>
 </head>
 <body>
-    <h1>Game Block Blast</h1>
-    <p>Versi pertama 😎</p>
+
+<div class="grid"></div>
+
+<script>
+    const grid = document.querySelector(".grid");
+
+    for (let i = 0; i < 64; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        grid.appendChild(cell);
+    }
+</script>
+
 </body>
 </html>
