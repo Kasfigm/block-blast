@@ -223,23 +223,36 @@ function placeBlock(cellTarget) {
     if (!selectedBlock) return;
 
     const start = parseInt(cellTarget.dataset.index);
+    const startRow = Math.floor(start / size);
+    const startCol = start % size;
 
     for (let offset of selectedBlock) {
-        const rowOffset = Math.floor(offset/3);
-        const colOffset = offset%3;
 
-        const targetIndex = start + rowOffset*size + colOffset;
+        const rowOffset = Math.floor(offset / 3);
+        const colOffset = offset % 3;
+
+        const newRow = startRow + rowOffset;
+        const newCol = startCol + colOffset;
+
+        if (newRow >= size || newCol >= size) return;
+
+        const targetIndex = newRow * size + newCol;
         const cell = document.querySelector(`[data-index='${targetIndex}']`);
 
         if (!cell || cell.classList.contains("filled")) return;
     }
 
     for (let offset of selectedBlock) {
-        const rowOffset = Math.floor(offset/3);
-        const colOffset = offset%3;
 
-        const targetIndex = start + rowOffset*size + colOffset;
+        const rowOffset = Math.floor(offset / 3);
+        const colOffset = offset % 3;
+
+        const newRow = startRow + rowOffset;
+        const newCol = startCol + colOffset;
+
+        const targetIndex = newRow * size + newCol;
         const cell = document.querySelector(`[data-index='${targetIndex}']`);
+
         cell.classList.add("filled");
         score += 5;
     }
