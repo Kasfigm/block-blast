@@ -14,6 +14,8 @@ body {
     align-items:flex-start;
     font-family: Arial;
     color:white;
+    touch-action:none;
+    overflow:hidden;
 }
 
 .game {
@@ -166,9 +168,11 @@ function createMiniBlock(shape) {
     let clone = null;
 
     mini.addEventListener("mousedown", startDrag);
-    mini.addEventListener("touchstart", startDrag);
+    mini.addEventListener("touchstart", startDrag, { passive:false });
 
     function startDrag(e){
+        e.preventDefault();
+
         selectedBlock = shape;
 
         clone = mini.cloneNode(true);
@@ -178,13 +182,15 @@ function createMiniBlock(shape) {
         moveAt(e);
 
         document.addEventListener("mousemove", moveAt);
-        document.addEventListener("touchmove", moveAt);
+        document.addEventListener("touchmove", moveAt, { passive:false });
 
         document.addEventListener("mouseup", drop);
         document.addEventListener("touchend", drop);
     }
 
     function moveAt(e){
+        e.preventDefault();
+
         const x = e.touches ? e.touches[0].clientX : e.clientX;
         const y = e.touches ? e.touches[0].clientY : e.clientY;
 
@@ -193,12 +199,12 @@ function createMiniBlock(shape) {
     }
 
     function drop(e){
-        clone.remove();
-
         const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
         const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
 
         const target = document.elementFromPoint(x,y);
+
+        clone.remove();
 
         if(target && target.classList.contains("cell")){
             placeBlock(target);
