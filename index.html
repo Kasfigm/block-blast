@@ -100,9 +100,10 @@ border-radius:4px;
 .dragging{
 position:fixed;
 pointer-events:none;
+transform:scale(1.2);
 opacity:0.95;
 z-index:999;
-transform:scale(1.2);
+will-change:transform;
 }
 </style>
 </head>
@@ -118,7 +119,7 @@ transform:scale(1.2);
 <div class="score" id="score">0</div>
 <div class="grid"></div>
 
-<div class="blocks">
+<div class="blocks" id="blocks">
 <div class="block-slot"></div>
 <div class="block-slot"></div>
 <div class="block-slot"></div>
@@ -204,7 +205,7 @@ mini.appendChild(empty);
 }
 
 let clone=null;
-let sensitivity=1.2;
+let sensitivity=2;
 
 let lastX=0;
 let lastY=0;
@@ -229,9 +230,8 @@ const y=e.touches?e.touches[0].clientY:e.clientY;
 lastX=x;
 lastY=y;
 
-const rect=clone.getBoundingClientRect();
-cloneX=x-rect.width/2;
-cloneY=y-rect.height/2;
+cloneX=x-30;
+cloneY=y-30;
 
 clone.style.left=cloneX+"px";
 clone.style.top=cloneY+"px";
@@ -260,8 +260,10 @@ clone.style.top=cloneY+"px";
 lastX=x;
 lastY=y;
 
-// 🔥 pakai posisi jari untuk preview
-const target=document.elementFromPoint(x,y);
+const centerX=cloneX+clone.offsetWidth/2;
+const centerY=cloneY+clone.offsetHeight/2;
+
+const target=document.elementFromPoint(centerX,centerY);
 
 if(target&&target.classList.contains("cell")){
 showPreview(parseInt(target.dataset.index));
@@ -270,12 +272,12 @@ clearPreview();
 }
 }
 
-function drop(e){
+function drop(){
 
-const x=e.changedTouches?e.changedTouches[0].clientX:e.clientX;
-const y=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
+const centerX=cloneX+clone.offsetWidth/2;
+const centerY=cloneY+clone.offsetHeight/2;
 
-const target=document.elementFromPoint(x,y);
+const target=document.elementFromPoint(centerX,centerY);
 
 clone.remove();
 clearPreview();
