@@ -14,15 +14,30 @@ justify-content:center;
 align-items:flex-start;
 font-family:Arial;
 color:white;
-touch-action:none;
 overflow:hidden;
 }
 
-.game{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;}
+.game{
+width:100%;
+max-width:400px;
+display:flex;
+flex-direction:column;
+align-items:center;
+}
 
-.header{width:100%;display:flex;justify-content:space-between;margin-top:15px;font-size:18px;}
+.header{
+width:90%;
+display:flex;
+justify-content:space-between;
+margin-top:15px;
+font-size:18px;
+}
 
-.score{font-size:42px;margin:10px 0;font-weight:bold;}
+.score{
+font-size:42px;
+margin:10px 0;
+font-weight:bold;
+}
 
 .grid{
 display:grid;
@@ -45,47 +60,84 @@ border-radius:5px;
 
 .cell.filled{
 background:linear-gradient(145deg,#8fe388,#4ea84a);
-box-shadow:inset 0 -3px 5px rgba(0,0,0,0.35),inset 0 3px 5px rgba(255,255,255,0.35);
+box-shadow:inset 0 -3px 5px rgba(0,0,0,0.35),
+inset 0 3px 5px rgba(255,255,255,0.35);
 }
 
 .cell.preview{
 background:rgba(143,227,136,0.35);
 }
 
-.blocks{display:flex;gap:20px;margin-top:25px;margin-bottom:30px;}
+/* 🔥 BLOCK CONTAINER FIX */
+.blocks{
+display:flex;
+justify-content:space-between;
+width:90%;
+max-width:320px;
+margin-top:25px;
+margin-bottom:30px;
+}
 
-.mini-grid{display:inline-grid;grid-template-columns:repeat(3,18px);gap:3px;padding:4px;}
+.block-slot{
+width:90px;
+display:flex;
+justify-content:center;
+}
+
+.mini-grid{
+display:inline-grid;
+grid-template-columns:repeat(3,18px);
+gap:3px;
+padding:4px;
+}
 
 .mini-cell{
-width:18px;height:18px;
+width:18px;
+height:18px;
 background:linear-gradient(145deg,#8fe388,#4ea84a);
 border-radius:4px;
 }
 
-.dragging{position:fixed;pointer-events:none;transform:scale(1.2);opacity:0.95;z-index:999;}
+.dragging{
+position:fixed;
+pointer-events:none;
+transform:scale(1.2);
+opacity:0.95;
+z-index:999;
+}
 </style>
 </head>
 
 <body>
 
 <div class="game">
-<div class="header">👑 <span id="bestScore">0</span> ⚙️</div>
+<div class="header">
+<div>👑 <span id="bestScore">0</span></div>
+<div>⚙️</div>
+</div>
+
 <div class="score" id="score">0</div>
 <div class="grid"></div>
-<div class="blocks" id="blocks"></div>
+
+<div class="blocks" id="blocks">
+<div class="block-slot"></div>
+<div class="block-slot"></div>
+<div class="block-slot"></div>
+</div>
+
 </div>
 
 <script>
 const grid=document.querySelector(".grid");
-const blocksContainer=document.getElementById("blocks");
+const slots=document.querySelectorAll(".block-slot");
 const scoreText=document.getElementById("score");
 const bestScoreText=document.getElementById("bestScore");
 
 const size=8;
 let selectedBlock=null;
+let currentMini=null;
 let score=0;
 let blockCount=0;
-let currentMini=null;
 
 let bestScore=localStorage.getItem("bestScore")||0;
 bestScoreText.textContent=bestScore;
@@ -100,13 +152,13 @@ grid.appendChild(cell);
 const shapes=[[0,1,3],[0,1,2],[0,3,4]];
 
 function generateBlocks(){
-blocksContainer.innerHTML="";
 blockCount=3;
 
-for(let i=0;i<3;i++){
+slots.forEach(slot=>{
+slot.innerHTML="";
 const shape=shapes[Math.floor(Math.random()*shapes.length)];
-createMiniBlock(shape);
-}
+createMiniBlock(shape,slot);
+});
 }
 
 function clearPreview(){
@@ -120,7 +172,7 @@ const startRow=Math.floor(index/size);
 const startCol=index%size;
 
 let valid=true;
-let previewCells=[];
+let cells=[];
 
 for(let offset of selectedBlock){
 const r=Math.floor(offset/3);
@@ -135,13 +187,13 @@ const cell=document.querySelector(`[data-index='${idx}']`);
 
 if(!cell||cell.classList.contains("filled")){valid=false;break;}
 
-previewCells.push(cell);
+cells.push(cell);
 }
 
-if(valid){previewCells.forEach(c=>c.classList.add("preview"));}
+if(valid)cells.forEach(c=>c.classList.add("preview"));
 }
 
-function createMiniBlock(shape){
+function createMiniBlock(shape,slot){
 const mini=document.createElement("div");
 mini.classList.add("mini-grid");
 
@@ -182,7 +234,6 @@ document.addEventListener("touchend",drop);
 }
 
 function moveAt(e){
-e.preventDefault();
 const x=e.touches?e.touches[0].clientX:e.clientX;
 const y=e.touches?e.touches[0].clientY:e.clientY;
 
@@ -214,7 +265,7 @@ document.removeEventListener("mouseup",drop);
 document.removeEventListener("touchend",drop);
 }
 
-blocksContainer.appendChild(mini);
+slot.appendChild(mini);
 }
 
 function placeBlock(cellTarget){
