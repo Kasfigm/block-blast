@@ -5,268 +5,231 @@
 <title>Block Blast</title>
 
 <style>
-body {
-    margin:0;
-    min-height:100vh;
-    background: linear-gradient(#c7351e,#9e2a15);
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
-    font-family: Arial;
-    color:white;
-    touch-action:none;
-    overflow:hidden;
+body{
+margin:0;
+min-height:100vh;
+background:linear-gradient(#c7351e,#9e2a15);
+display:flex;
+justify-content:center;
+align-items:flex-start;
+font-family:Arial;
+color:white;
+touch-action:none;
+overflow:hidden;
 }
 
-.game {
-    width:100%;
-    max-width:400px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
+.game{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;}
+
+.header{width:100%;display:flex;justify-content:space-between;margin-top:15px;font-size:18px;}
+
+.score{font-size:40px;margin:10px 0;font-weight:bold;}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(8,1fr);
+gap:4px;
+width:90%;
+max-width:320px;
+aspect-ratio:1;
+background:#7a2b1b;
+padding:8px;
+border-radius:12px;
+box-shadow:inset 0 0 10px rgba(0,0,0,0.5);
 }
 
-.header {
-    width:100%;
-    display:flex;
-    justify-content:space-between;
-    margin-top:15px;
-    font-size:18px;
+.cell{width:100%;aspect-ratio:1;background:#4b1f15;border-radius:4px;}
+
+.cell.filled{background:linear-gradient(#ffd84d,#f2b705);}
+
+.cell.preview{
+background:rgba(255,216,77,0.4);
 }
 
-.score {
-    font-size:40px;
-    margin:10px 0;
-    font-weight:bold;
-}
+.blocks{display:flex;gap:20px;margin-top:25px;margin-bottom:30px;}
 
-.grid {
-    display:grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap:4px;
-    width:90%;
-    max-width:320px;
-    aspect-ratio:1;
-    background:#7a2b1b;
-    padding:8px;
-    border-radius:12px;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-}
+.mini-grid{display:inline-grid;grid-template-columns:repeat(3,18px);gap:3px;padding:4px;}
 
-.cell {
-    width:100%;
-    aspect-ratio:1;
-    background:#4b1f15;
-    border-radius:4px;
-}
+.mini-cell{width:18px;height:18px;background:linear-gradient(#ffd84d,#f2b705);border-radius:3px;}
 
-.cell.filled {
-    background:linear-gradient(#ffd84d,#f2b705);
-}
-
-.blocks {
-    display:flex;
-    gap:20px;
-    margin-top:25px;
-    margin-bottom:30px;
-}
-
-.mini-grid {
-    display:inline-grid;
-    grid-template-columns: repeat(3, 18px);
-    gap:3px;
-    cursor:pointer;
-    padding:4px;
-}
-
-.mini-cell {
-    width:18px;
-    height:18px;
-    background:linear-gradient(#ffd84d,#f2b705);
-    border-radius:3px;
-}
-
-.dragging {
-    position:fixed;
-    pointer-events:none;
-    transform:scale(1.2);
-    opacity:0.9;
-    z-index:999;
-}
+.dragging{position:fixed;pointer-events:none;transform:scale(1.2);opacity:0.9;z-index:999;}
 </style>
 </head>
 
 <body>
 
 <div class="game">
-
-<div class="header">
-    👑 Best: <span id="bestScore">0</span>
-    ⚙️
-</div>
-
+<div class="header">👑 Best: <span id="bestScore">0</span> ⚙️</div>
 <div class="score" id="score">0</div>
-
 <div class="grid"></div>
-
 <div class="blocks" id="blocks"></div>
-
 </div>
 
 <script>
-const grid = document.querySelector(".grid");
-const blocksContainer = document.getElementById("blocks");
-const scoreText = document.getElementById("score");
-const bestScoreText = document.getElementById("bestScore");
+const grid=document.querySelector(".grid");
+const blocksContainer=document.getElementById("blocks");
+const scoreText=document.getElementById("score");
+const bestScoreText=document.getElementById("bestScore");
 
-const size = 8;
-let selectedBlock = null;
-let score = 0;
+const size=8;
+let selectedBlock=null;
+let score=0;
 
-let bestScore = localStorage.getItem("bestScore") || 0;
-bestScoreText.textContent = bestScore;
+let bestScore=localStorage.getItem("bestScore")||0;
+bestScoreText.textContent=bestScore;
 
-for (let i = 0; i < size * size; i++) {
-    const cell = document.createElement("div");
-    cell.classList.add("cell");
-    cell.dataset.index = i;
-    grid.appendChild(cell);
+for(let i=0;i<size*size;i++){
+const cell=document.createElement("div");
+cell.classList.add("cell");
+cell.dataset.index=i;
+grid.appendChild(cell);
 }
 
-const shapes = [
-    [0,1,3],
-    [0,1,2],
-    [0,3,4]
-];
+const shapes=[[0,1,3],[0,1,2],[0,3,4]];
 
-function generateBlocks() {
-    blocksContainer.innerHTML = "";
-    for (let i = 0; i < 3; i++) {
-        const shape = shapes[Math.floor(Math.random()*shapes.length)];
-        createMiniBlock(shape);
-    }
+function generateBlocks(){
+blocksContainer.innerHTML="";
+for(let i=0;i<3;i++){
+const shape=shapes[Math.floor(Math.random()*shapes.length)];
+createMiniBlock(shape);
+}
 }
 
-function createMiniBlock(shape) {
-    const mini = document.createElement("div");
-    mini.classList.add("mini-grid");
-
-    for (let i = 0; i < 9; i++) {
-        if (shape.includes(i)) {
-            const cell = document.createElement("div");
-            cell.classList.add("mini-cell");
-            mini.appendChild(cell);
-        } else {
-            const empty = document.createElement("div");
-            empty.style.width="18px";
-            empty.style.height="18px";
-            empty.style.visibility="hidden";
-            mini.appendChild(empty);
-        }
-    }
-
-    let clone = null;
-
-    mini.addEventListener("mousedown", startDrag);
-    mini.addEventListener("touchstart", startDrag, { passive:false });
-
-    function startDrag(e){
-        e.preventDefault();
-
-        selectedBlock = shape;
-
-        clone = mini.cloneNode(true);
-        clone.classList.add("dragging");
-        document.body.appendChild(clone);
-
-        moveAt(e);
-
-        document.addEventListener("mousemove", moveAt);
-        document.addEventListener("touchmove", moveAt, { passive:false });
-
-        document.addEventListener("mouseup", drop);
-        document.addEventListener("touchend", drop);
-    }
-
-    function moveAt(e){
-        e.preventDefault();
-
-        const x = e.touches ? e.touches[0].clientX : e.clientX;
-        const y = e.touches ? e.touches[0].clientY : e.clientY;
-
-        clone.style.left = x - 30 + "px";
-        clone.style.top = y - 30 + "px";
-    }
-
-    function drop(e){
-        const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
-        const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-
-        const target = document.elementFromPoint(x,y);
-
-        clone.remove();
-
-        if(target && target.classList.contains("cell")){
-            placeBlock(target);
-        }
-
-        document.removeEventListener("mousemove", moveAt);
-        document.removeEventListener("touchmove", moveAt);
-        document.removeEventListener("mouseup", drop);
-        document.removeEventListener("touchend", drop);
-    }
-
-    blocksContainer.appendChild(mini);
+function clearPreview(){
+document.querySelectorAll(".preview").forEach(c=>c.classList.remove("preview"));
 }
 
-function placeBlock(cellTarget) {
-    if (!selectedBlock) return;
+function showPreview(index){
+clearPreview();
+const startRow=Math.floor(index/size);
+const startCol=index%size;
 
-    const start = parseInt(cellTarget.dataset.index);
-    const startRow = Math.floor(start / size);
-    const startCol = start % size;
+for(let offset of selectedBlock){
+const r=Math.floor(offset/3);
+const c=offset%3;
+const newRow=startRow+r;
+const newCol=startCol+c;
 
-    for (let offset of selectedBlock) {
+if(newRow>=size||newCol>=size)return;
 
-        const rowOffset = Math.floor(offset / 3);
-        const colOffset = offset % 3;
+const targetIndex=newRow*size+newCol;
+const cell=document.querySelector(`[data-index='${targetIndex}']`);
+if(cell&&!cell.classList.contains("filled")) cell.classList.add("preview");
+}
+}
 
-        const newRow = startRow + rowOffset;
-        const newCol = startCol + colOffset;
+function createMiniBlock(shape){
+const mini=document.createElement("div");
+mini.classList.add("mini-grid");
 
-        if (newRow >= size || newCol >= size) return;
+for(let i=0;i<9;i++){
+if(shape.includes(i)){
+const cell=document.createElement("div");
+cell.classList.add("mini-cell");
+mini.appendChild(cell);
+}else{
+const empty=document.createElement("div");
+empty.style.width="18px";
+empty.style.height="18px";
+empty.style.visibility="hidden";
+mini.appendChild(empty);
+}
+}
 
-        const targetIndex = newRow * size + newCol;
-        const cell = document.querySelector(`[data-index='${targetIndex}']`);
+let clone=null;
 
-        if (!cell || cell.classList.contains("filled")) return;
-    }
+mini.addEventListener("mousedown",startDrag);
+mini.addEventListener("touchstart",startDrag,{passive:false});
 
-    for (let offset of selectedBlock) {
+function startDrag(e){
+e.preventDefault();
+selectedBlock=shape;
 
-        const rowOffset = Math.floor(offset / 3);
-        const colOffset = offset % 3;
+clone=mini.cloneNode(true);
+clone.classList.add("dragging");
+document.body.appendChild(clone);
 
-        const newRow = startRow + rowOffset;
-        const newCol = startCol + colOffset;
+moveAt(e);
 
-        const targetIndex = newRow * size + newCol;
-        const cell = document.querySelector(`[data-index='${targetIndex}']`);
+document.addEventListener("mousemove",moveAt);
+document.addEventListener("touchmove",moveAt,{passive:false});
+document.addEventListener("mouseup",drop);
+document.addEventListener("touchend",drop);
+}
 
-        cell.classList.add("filled");
-        score += 5;
-    }
+function moveAt(e){
+e.preventDefault();
+const x=e.touches?e.touches[0].clientX:e.clientX;
+const y=e.touches?e.touches[0].clientY:e.clientY;
 
-    scoreText.textContent = score;
+clone.style.left=x-30+"px";
+clone.style.top=y-30+"px";
 
-    if (score > bestScore) {
-        bestScore = score;
-        localStorage.setItem("bestScore", bestScore);
-        bestScoreText.textContent = bestScore;
-    }
+const target=document.elementFromPoint(x,y);
+if(target&&target.classList.contains("cell")){
+showPreview(parseInt(target.dataset.index));
+}else clearPreview();
+}
 
-    selectedBlock = null;
-    generateBlocks();
+function drop(e){
+const x=e.changedTouches?e.changedTouches[0].clientX:e.clientX;
+const y=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
+
+const target=document.elementFromPoint(x,y);
+
+clone.remove();
+clearPreview();
+
+if(target&&target.classList.contains("cell")){
+placeBlock(target);
+}
+
+document.removeEventListener("mousemove",moveAt);
+document.removeEventListener("touchmove",moveAt);
+document.removeEventListener("mouseup",drop);
+document.removeEventListener("touchend",drop);
+}
+
+blocksContainer.appendChild(mini);
+}
+
+function placeBlock(cellTarget){
+if(!selectedBlock)return;
+
+const start=parseInt(cellTarget.dataset.index);
+const startRow=Math.floor(start/size);
+const startCol=start%size;
+
+for(let offset of selectedBlock){
+const r=Math.floor(offset/3);
+const c=offset%3;
+const newRow=startRow+r;
+const newCol=startCol+c;
+if(newRow>=size||newCol>=size)return;
+const idx=newRow*size+newCol;
+const cell=document.querySelector(`[data-index='${idx}']`);
+if(!cell||cell.classList.contains("filled"))return;
+}
+
+for(let offset of selectedBlock){
+const r=Math.floor(offset/3);
+const c=offset%3;
+const newRow=startRow+r;
+const newCol=startCol+c;
+const idx=newRow*size+newCol;
+document.querySelector(`[data-index='${idx}']`).classList.add("filled");
+score+=5;
+}
+
+scoreText.textContent=score;
+
+if(score>bestScore){
+bestScore=score;
+localStorage.setItem("bestScore",bestScore);
+bestScoreText.textContent=bestScore;
+}
+
+selectedBlock=null;
+generateBlocks();
 }
 
 generateBlocks();
