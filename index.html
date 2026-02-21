@@ -302,11 +302,12 @@ function placeBlock(cellTarget){
     cell.classList.add("filled");
     score += 5;
 
-    // 🔥 Step ke-3: panggil ledakan untuk tiap cell
-    if(typeof explodeBlock === "function"){
-      explodeBlock(cell);
-    }
+    // ledakan
+    if(typeof explodeBlock==="function") explodeBlock(cell);
   }
+
+  // cek baris penuh
+  if(typeof checkFullLines==="function") checkFullLines(size);
 
   scoreText.textContent=score;
 
@@ -334,7 +335,6 @@ generateBlocks();
 
 <!-- panggil file ledakan -->
 <script src="explosion.js"></script>
-
 <!-- panggil file clearLine -->
 <script src="clearLine.js"></script>
 
