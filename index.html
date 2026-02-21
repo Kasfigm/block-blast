@@ -1,337 +1,335 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Block Blast</title>
-
-<style>
-body{
-margin:0;
-min-height:100vh;
-background:linear-gradient(#5f7f62,#3e5a43);
-display:flex;
-justify-content:center;
-align-items:flex-start;
-font-family:Arial;
-color:white;
-overflow:hidden;
-}
-
-.game{
-width:100%;
-max-width:400px;
-display:flex;
-flex-direction:column;
-align-items:center;
-}
-
-.header{
-width:90%;
-display:flex;
-justify-content:space-between;
-margin-top:15px;
-font-size:18px;
-}
-
-.score{
-font-size:42px;
-margin:10px 0;
-font-weight:bold;
-}
-
-.grid{
-display:grid;
-grid-template-columns:repeat(8,1fr);
-gap:3px;
-width:90%;
-max-width:320px;
-aspect-ratio:1;
-background:#2e3f33;
-padding:8px;
-border-radius:14px;
-}
-
-.cell{
-width:100%;
-aspect-ratio:1;
-background:#1f2c23;
-border-radius:5px;
-}
-
-.cell.filled{
-background:linear-gradient(145deg,#8fe388,#4ea84a);
-box-shadow:inset 0 -3px 5px rgba(0,0,0,0.35),
-inset 0 3px 5px rgba(255,255,255,0.35);
-}
-
-.cell.preview{
-background:rgba(143,227,136,0.35);
-}
-
-.blocks{
-display:flex;
-justify-content:space-between;
-width:90%;
-max-width:320px;
-margin-top:25px;
-margin-bottom:30px;
-}
-
-.block-slot{
-width:90px;
-display:flex;
-justify-content:center;
-}
-
-.mini-grid{
-display:inline-grid;
-grid-template-columns:repeat(3,18px);
-gap:3px;
-padding:4px;
-}
-
-.mini-cell{
-width:18px;
-height:18px;
-background:linear-gradient(145deg,#8fe388,#4ea84a);
-border-radius:4px;
-}
-
-.dragging{
-position:fixed;
-pointer-events:none;
-opacity:0.95;
-z-index:999;
-left:0;
-top:0;
-}
-</style>
-</head>
-
-<body>
-
-<div class="game">
-<div class="header">
-<div>👑 <span id="bestScore">0</span></div>
-<div>⚙️</div>
-</div>
-
-<div class="score" id="score">0</div>
-<div class="grid"></div>
-
-<div class="blocks" id="blocks">
-<div class="block-slot"></div>
-<div class="block-slot"></div>
-<div class="block-slot"></div>
-</div>
-</div>
-
-<script>
-const grid=document.querySelector(".grid");
-const slots=document.querySelectorAll(".block-slot");
-const scoreText=document.getElementById("score");
-const bestScoreText=document.getElementById("bestScore");
-
-const size=8;
-let selectedBlock=null;
-let currentMini=null;
-let score=0;
-let blockCount=0;
-
-let bestScore=localStorage.getItem("bestScore")||0;
-bestScoreText.textContent=bestScore;
-
-for(let i=0;i<size*size;i++){
-const cell=document.createElement("div");
-cell.classList.add("cell");
-cell.dataset.index=i;
-grid.appendChild(cell);
-}
-
-const shapes=[[0,1,3],[0,1,2],[0,3,4]];
-
-function generateBlocks(){
-blockCount=3;
-slots.forEach(slot=>{
-slot.innerHTML="";
-const shape=shapes[Math.floor(Math.random()*shapes.length)];
-createMiniBlock(shape,slot);
-});
-}
-
-function clearPreview(){
-document.querySelectorAll(".preview").forEach(c=>c.classList.remove("preview"));
-}
-
-function showPreview(index){
-clearPreview();
-const startRow=Math.floor(index/size);
-const startCol=index%size;
-let valid=true;
-let cells=[];
-
-for(let offset of selectedBlock){
-const r=Math.floor(offset/3);
-const c=offset%3;
-const newRow=startRow+r;
-const newCol=startCol+c;
-if(newRow>=size||newCol>=size){valid=false;break;}
-const idx=newRow*size+newCol;
-const cell=document.querySelector(`[data-index='${idx}']`);
-if(!cell||cell.classList.contains("filled")){valid=false;break;}
-cells.push(cell);
-}
-
-if(valid)cells.forEach(c=>c.classList.add("preview"));
-}
-
-function createMiniBlock(shape,slot){
-
-const mini=document.createElement("div");
-mini.classList.add("mini-grid");
-
-for(let i=0;i<9;i++){
-if(shape.includes(i)){
-const cell=document.createElement("div");
-cell.classList.add("mini-cell");
-mini.appendChild(cell);
-}else{
-const empty=document.createElement("div");
-empty.style.width="18px";
-empty.style.height="18px";
-empty.style.visibility="hidden";
-mini.appendChild(empty);
-}
-}
-
-let clone=null;
-let cloneX=0;
-let cloneY=0;
-
-mini.addEventListener("mousedown",startDrag);
-mini.addEventListener("touchstart",startDrag,{passive:false});
-
-function startDrag(e){
-e.preventDefault();
-selectedBlock=shape;
-currentMini=mini;
-
-clone=mini.cloneNode(true);
-clone.classList.add("dragging");
-document.body.appendChild(clone);
-
-const x=e.touches?e.touches[0].clientX:e.clientX;
-const y=e.touches?e.touches[0].clientY:e.clientY;
-
-cloneX = x - mini.offsetWidth/2;
-cloneY = y - mini.offsetHeight/2;
-
-clone.style.left=cloneX+"px";
-clone.style.top=cloneY+"px";
-
-document.addEventListener("mousemove",moveAt);
-document.addEventListener("touchmove",moveAt,{passive:false});
-document.addEventListener("mouseup",drop);
-document.addEventListener("touchend",drop);
-}
-
-function moveAt(e){
-e.preventDefault();
-
-const x=e.touches?e.touches[0].clientX:e.clientX;
-const y=e.touches?e.touches[0].clientY:e.clientY;
-
-cloneX = x - clone.offsetWidth/2;
-cloneY = y - clone.offsetHeight/2;
-
-clone.style.left=cloneX+"px";
-clone.style.top=cloneY+"px";
-
-const centerX=cloneX+clone.offsetWidth/2;
-const centerY=cloneY+clone.offsetHeight/2;
-
-const target=document.elementFromPoint(centerX,centerY);
-
-if(target&&target.classList.contains("cell")){
-showPreview(parseInt(target.dataset.index));
-}else{
-clearPreview();
-}
-}
-
-function drop(){
-
-const centerX=cloneX+clone.offsetWidth/2;
-const centerY=cloneY+clone.offsetHeight/2;
-
-const target=document.elementFromPoint(centerX,centerY);
-
-clone.remove();
-clearPreview();
-
-if(target&&target.classList.contains("cell")){
-placeBlock(target);
-}
-
-document.removeEventListener("mousemove",moveAt);
-document.removeEventListener("touchmove",moveAt);
-document.removeEventListener("mouseup",drop);
-document.removeEventListener("touchend",drop);
-}
-
-slot.appendChild(mini);
-}
-
-function placeBlock(cellTarget){
-if(!selectedBlock)return;
-
-const start=parseInt(cellTarget.dataset.index);
-const startRow=Math.floor(start/size);
-const startCol=start%size;
-
-for(let offset of selectedBlock){
-const r=Math.floor(offset/3);
-const c=offset%3;
-const newRow=startRow+r;
-const newCol=startCol+c;
-if(newRow>=size||newCol>=size)return;
-const idx=newRow*size+newCol;
-const cell=document.querySelector(`[data-index='${idx}']`);
-if(!cell||cell.classList.contains("filled"))return;
-}
-
-for(let offset of selectedBlock){
-const r=Math.floor(offset/3);
-const c=offset%3;
-const newRow=startRow+r;
-const newCol=startCol+c;
-const idx=newRow*size+newCol;
-document.querySelector(`[data-index='${idx}']`).classList.add("filled");
-score+=5;
-}
-
-scoreText.textContent=score;
-
-if(score>bestScore){
-bestScore=score;
-localStorage.setItem("bestScore",bestScore);
-bestScoreText.textContent=bestScore;
-}
-
-if(currentMini){
-currentMini.remove();
-blockCount--;
-}
-
-if(blockCount<=0){
-generateBlocks();
-}
-
-selectedBlock=null;
-currentMini=null;
-}
-
-generateBlocks();
-</script>
-</body>
+<!DOCTYPE html>  <html>  
+<head>  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>Block Blast</title>  <style>  
+body{  
+margin:0;  
+min-height:100vh;  
+background:linear-gradient(#5f7f62,#3e5a43);  
+display:flex;  
+justify-content:center;  
+align-items:flex-start;  
+font-family:Arial;  
+color:white;  
+overflow:hidden;  
+}  
+  
+.game{  
+width:100%;  
+max-width:400px;  
+display:flex;  
+flex-direction:column;  
+align-items:center;  
+}  
+  
+.header{  
+width:90%;  
+display:flex;  
+justify-content:space-between;  
+margin-top:15px;  
+font-size:18px;  
+}  
+  
+.score{  
+font-size:42px;  
+margin:10px 0;  
+font-weight:bold;  
+}  
+  
+.grid{  
+display:grid;  
+grid-template-columns:repeat(8,1fr);  
+gap:3px;  
+width:90%;  
+max-width:320px;  
+aspect-ratio:1;  
+background:#2e3f33;  
+padding:8px;  
+border-radius:14px;  
+}  
+  
+.cell{  
+width:100%;  
+aspect-ratio:1;  
+background:#1f2c23;  
+border-radius:5px;  
+}  
+  
+.cell.filled{  
+background:linear-gradient(145deg,#8fe388,#4ea84a);  
+box-shadow:inset 0 -3px 5px rgba(0,0,0,0.35),  
+inset 0 3px 5px rgba(255,255,255,0.35);  
+}  
+  
+.cell.preview{  
+background:rgba(143,227,136,0.35);  
+}  
+  
+.blocks{  
+display:flex;  
+justify-content:space-between;  
+width:90%;  
+max-width:320px;  
+margin-top:25px;  
+margin-bottom:30px;  
+}  
+  
+.block-slot{  
+width:90px;  
+display:flex;  
+justify-content:center;  
+}  
+  
+.mini-grid{  
+display:inline-grid;  
+grid-template-columns:repeat(3,18px);  
+gap:3px;  
+padding:4px;  
+}  
+  
+.mini-cell{  
+width:18px;  
+height:18px;  
+background:linear-gradient(145deg,#8fe388,#4ea84a);  
+border-radius:4px;  
+}  
+  
+.dragging{  
+position:fixed;  
+pointer-events:none;  
+transform:scale(1.2);  
+opacity:0.95;  
+z-index:999;  
+will-change:transform;  
+}  
+</style>  </head>  <body>  <div class="game">  
+<div class="header">  
+<div>👑 <span id="bestScore">0</span></div>  
+<div>⚙️</div>  
+</div>  <div class="score" id="score">0</div>  
+<div class="grid"></div>  <div class="blocks" id="blocks">  
+<div class="block-slot"></div>  
+<div class="block-slot"></div>  
+<div class="block-slot"></div>  
+</div>  
+</div>  <script>  
+const grid=document.querySelector(".grid");  
+const slots=document.querySelectorAll(".block-slot");  
+const scoreText=document.getElementById("score");  
+const bestScoreText=document.getElementById("bestScore");  
+  
+const size=8;  
+let selectedBlock=null;  
+let currentMini=null;  
+let score=0;  
+let blockCount=0;  
+  
+let bestScore=localStorage.getItem("bestScore")||0;  
+bestScoreText.textContent=bestScore;  
+  
+for(let i=0;i<size*size;i++){  
+const cell=document.createElement("div");  
+cell.classList.add("cell");  
+cell.dataset.index=i;  
+grid.appendChild(cell);  
+}  
+  
+const shapes=[[0,1,3],[0,1,2],[0,3,4]];  
+  
+function generateBlocks(){  
+blockCount=3;  
+slots.forEach(slot=>{  
+slot.innerHTML="";  
+const shape=shapes[Math.floor(Math.random()*shapes.length)];  
+createMiniBlock(shape,slot);  
+});  
+}  
+  
+function clearPreview(){  
+document.querySelectorAll(".preview").forEach(c=>c.classList.remove("preview"));  
+}  
+  
+function showPreview(index){  
+clearPreview();  
+const startRow=Math.floor(index/size);  
+const startCol=index%size;  
+let valid=true;  
+let cells=[];  
+  
+for(let offset of selectedBlock){  
+const r=Math.floor(offset/3);  
+const c=offset%3;  
+const newRow=startRow+r;  
+const newCol=startCol+c;  
+if(newRow>=size||newCol>=size){valid=false;break;}  
+const idx=newRow*size+newCol;  
+const cell=document.querySelector(`[data-index='${idx}']`);  
+if(!cell||cell.classList.contains("filled")){valid=false;break;}  
+cells.push(cell);  
+}  
+  
+if(valid)cells.forEach(c=>c.classList.add("preview"));  
+}  
+  
+function createMiniBlock(shape,slot){  
+  
+const mini=document.createElement("div");  
+mini.classList.add("mini-grid");  
+  
+for(let i=0;i<9;i++){  
+if(shape.includes(i)){  
+const cell=document.createElement("div");  
+cell.classList.add("mini-cell");  
+mini.appendChild(cell);  
+}else{  
+const empty=document.createElement("div");  
+empty.style.width="18px";  
+empty.style.height="18px";  
+empty.style.visibility="hidden";  
+mini.appendChild(empty);  
+}  
+}  
+  
+let clone=null;  
+let sensitivity=2;  
+  
+let lastX=0;  
+let lastY=0;  
+let cloneX=0;  
+let cloneY=0;  
+  
+mini.addEventListener("mousedown",startDrag);  
+mini.addEventListener("touchstart",startDrag,{passive:false});  
+  
+function startDrag(e){  
+e.preventDefault();  
+selectedBlock=shape;  
+currentMini=mini;  
+  
+clone=mini.cloneNode(true);  
+clone.classList.add("dragging");  
+document.body.appendChild(clone);  
+  
+const x=e.touches?e.touches[0].clientX:e.clientX;  
+const y=e.touches?e.touches[0].clientY:e.clientY;  
+  
+lastX=x;  
+lastY=y;  
+  
+cloneX=x-30;  
+cloneY=y-30;  
+  
+clone.style.left=cloneX+"px";  
+clone.style.top=cloneY+"px";  
+  
+document.addEventListener("mousemove",moveAt);  
+document.addEventListener("touchmove",moveAt,{passive:false});  
+document.addEventListener("mouseup",drop);  
+document.addEventListener("touchend",drop);  
+}  
+  
+function moveAt(e){  
+e.preventDefault();  
+  
+const x=e.touches?e.touches[0].clientX:e.clientX;  
+const y=e.touches?e.touches[0].clientY:e.clientY;  
+  
+const dx=(x-lastX)*sensitivity;  
+const dy=(y-lastY)*sensitivity;  
+  
+cloneX+=dx;  
+cloneY+=dy;  
+  
+clone.style.left=cloneX+"px";  
+clone.style.top=cloneY+"px";  
+  
+lastX=x;  
+lastY=y;  
+  
+const centerX=cloneX+clone.offsetWidth/2;  
+const centerY=cloneY+clone.offsetHeight/2;  
+  
+const target=document.elementFromPoint(centerX,centerY);  
+  
+if(target&&target.classList.contains("cell")){  
+showPreview(parseInt(target.dataset.index));  
+}else{  
+clearPreview();  
+}  
+}  
+  
+function drop(){  
+  
+const centerX=cloneX+clone.offsetWidth/2;  
+const centerY=cloneY+clone.offsetHeight/2;  
+  
+const target=document.elementFromPoint(centerX,centerY);  
+  
+clone.remove();  
+clearPreview();  
+  
+if(target&&target.classList.contains("cell")){  
+placeBlock(target);  
+}  
+  
+document.removeEventListener("mousemove",moveAt);  
+document.removeEventListener("touchmove",moveAt);  
+document.removeEventListener("mouseup",drop);  
+document.removeEventListener("touchend",drop);  
+}  
+  
+slot.appendChild(mini);  
+}  
+  
+function placeBlock(cellTarget){  
+if(!selectedBlock)return;  
+  
+const start=parseInt(cellTarget.dataset.index);  
+const startRow=Math.floor(start/size);  
+const startCol=start%size;  
+  
+for(let offset of selectedBlock){  
+const r=Math.floor(offset/3);  
+const c=offset%3;  
+const newRow=startRow+r;  
+const newCol=startCol+c;  
+if(newRow>=size||newCol>=size)return;  
+const idx=newRow*size+newCol;  
+const cell=document.querySelector(`[data-index='${idx}']`);  
+if(!cell||cell.classList.contains("filled"))return;  
+}  
+  
+for(let offset of selectedBlock){  
+const r=Math.floor(offset/3);  
+const c=offset%3;  
+const newRow=startRow+r;  
+const newCol=startCol+c;  
+const idx=newRow*size+newCol;  
+document.querySelector(`[data-index='${idx}']`).classList.add("filled");  
+score+=5;  
+}  
+  
+scoreText.textContent=score;  
+  
+if(score>bestScore){  
+bestScore=score;  
+localStorage.setItem("bestScore",bestScore);  
+bestScoreText.textContent=bestScore;  
+}  
+  
+if(currentMini){  
+currentMini.remove();  
+blockCount--;  
+}  
+  
+if(blockCount<=0){  
+generateBlocks();  
+}  
+  
+selectedBlock=null;  
+currentMini=null;  
+}  
+  
+generateBlocks();  
+</script>  </body>  
 </html>
