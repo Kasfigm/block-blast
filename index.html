@@ -204,7 +204,7 @@ mini.appendChild(empty);
 }
 
 let clone=null;
-let sensitivity=1.25;
+let sensitivity=1.2;
 
 let lastX=0;
 let lastY=0;
@@ -230,7 +230,6 @@ lastX=x;
 lastY=y;
 
 const rect=clone.getBoundingClientRect();
-
 cloneX=x-rect.width/2;
 cloneY=y-rect.height/2;
 
@@ -261,10 +260,8 @@ clone.style.top=cloneY+"px";
 lastX=x;
 lastY=y;
 
-const centerX=cloneX+clone.offsetWidth/2;
-const centerY=cloneY+clone.offsetHeight/2;
-
-const target=document.elementFromPoint(centerX,centerY);
+// 🔥 pakai posisi jari untuk preview
+const target=document.elementFromPoint(x,y);
 
 if(target&&target.classList.contains("cell")){
 showPreview(parseInt(target.dataset.index));
@@ -273,11 +270,12 @@ clearPreview();
 }
 }
 
-function drop(){
-const centerX=cloneX+clone.offsetWidth/2;
-const centerY=cloneY+clone.offsetHeight/2;
+function drop(e){
 
-const target=document.elementFromPoint(centerX,centerY);
+const x=e.changedTouches?e.changedTouches[0].clientX:e.clientX;
+const y=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
+
+const target=document.elementFromPoint(x,y);
 
 clone.remove();
 clearPreview();
