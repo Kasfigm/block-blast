@@ -103,6 +103,7 @@ pointer-events:none;
 transform:scale(1.2);
 opacity:0.95;
 z-index:999;
+will-change:transform;
 }
 </style>
 </head>
@@ -123,7 +124,6 @@ z-index:999;
 <div class="block-slot"></div>
 <div class="block-slot"></div>
 </div>
-
 </div>
 
 <script>
@@ -205,9 +205,12 @@ mini.appendChild(empty);
 }
 
 let clone=null;
-let sensitivity=2; // 🔥 atur 1.5 - 3
+let sensitivity=2;
+
 let lastX=0;
 let lastY=0;
+let cloneX=0;
+let cloneY=0;
 
 mini.addEventListener("mousedown",startDrag);
 mini.addEventListener("touchstart",startDrag,{passive:false});
@@ -227,8 +230,11 @@ const y=e.touches?e.touches[0].clientY:e.clientY;
 lastX=x;
 lastY=y;
 
-clone.style.left=x-30+"px";
-clone.style.top=y-30+"px";
+cloneX=x-30;
+cloneY=y-30;
+
+clone.style.left=cloneX+"px";
+clone.style.top=cloneY+"px";
 
 document.addEventListener("mousemove",moveAt);
 document.addEventListener("touchmove",moveAt,{passive:false});
@@ -237,29 +243,41 @@ document.addEventListener("touchend",drop);
 }
 
 function moveAt(e){
+e.preventDefault();
+
 const x=e.touches?e.touches[0].clientX:e.clientX;
 const y=e.touches?e.touches[0].clientY:e.clientY;
 
 const dx=(x-lastX)*sensitivity;
 const dy=(y-lastY)*sensitivity;
 
-clone.style.left=clone.offsetLeft+dx+"px";
-clone.style.top=clone.offsetTop+dy+"px";
+cloneX+=dx;
+cloneY+=dy;
+
+clone.style.left=cloneX+"px";
+clone.style.top=cloneY+"px";
 
 lastX=x;
 lastY=y;
 
-const target=document.elementFromPoint(x,y);
+const centerX=cloneX+clone.offsetWidth/2;
+const centerY=cloneY+clone.offsetHeight/2;
+
+const target=document.elementFromPoint(centerX,centerY);
+
 if(target&&target.classList.contains("cell")){
 showPreview(parseInt(target.dataset.index));
-}else clearPreview();
+}else{
+clearPreview();
+}
 }
 
-function drop(e){
-const x=e.changedTouches?e.changedTouches[0].clientX:e.clientX;
-const y=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
+function drop(){
 
-const target=document.elementFromPoint(x,y);
+const centerX=cloneX+clone.offsetWidth/2;
+const centerY=cloneY+clone.offsetHeight/2;
+
+const target=document.elementFromPoint(centerX,centerY);
 
 clone.remove();
 clearPreview();
@@ -328,6 +346,5 @@ currentMini=null;
 
 generateBlocks();
 </script>
-
 </body>
 </html>
