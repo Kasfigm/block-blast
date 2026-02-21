@@ -100,10 +100,10 @@ border-radius:4px;
 .dragging{
 position:fixed;
 pointer-events:none;
-transform:scale(1.2);
 opacity:0.95;
 z-index:999;
-will-change:transform;
+left:0;
+top:0;
 }
 </style>
 </head>
@@ -205,10 +205,6 @@ mini.appendChild(empty);
 }
 
 let clone=null;
-let sensitivity=2;
-
-let lastX=0;
-let lastY=0;
 let cloneX=0;
 let cloneY=0;
 
@@ -227,11 +223,8 @@ document.body.appendChild(clone);
 const x=e.touches?e.touches[0].clientX:e.clientX;
 const y=e.touches?e.touches[0].clientY:e.clientY;
 
-lastX=x;
-lastY=y;
-
-cloneX=x-30;
-cloneY=y-30;
+cloneX = x - mini.offsetWidth/2;
+cloneY = y - mini.offsetHeight/2;
 
 clone.style.left=cloneX+"px";
 clone.style.top=cloneY+"px";
@@ -248,17 +241,11 @@ e.preventDefault();
 const x=e.touches?e.touches[0].clientX:e.clientX;
 const y=e.touches?e.touches[0].clientY:e.clientY;
 
-const dx=(x-lastX)*sensitivity;
-const dy=(y-lastY)*sensitivity;
-
-cloneX+=dx;
-cloneY+=dy;
+cloneX = x - clone.offsetWidth/2;
+cloneY = y - clone.offsetHeight/2;
 
 clone.style.left=cloneX+"px";
 clone.style.top=cloneY+"px";
-
-lastX=x;
-lastY=y;
 
 const centerX=cloneX+clone.offsetWidth/2;
 const centerY=cloneY+clone.offsetHeight/2;
