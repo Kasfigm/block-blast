@@ -4,24 +4,28 @@
     <title>Block Blast</title>
     <style>
         body {
+            background: #111;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: #222;
         }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(8, 40px);
-            grid-template-rows: repeat(8, 40px);
-            gap: 4px;
+            gap: 3px;
         }
 
         .cell {
             width: 40px;
             height: 40px;
             background: #444;
+            cursor: pointer;
+        }
+
+        .cell.active {
+            background: #00ff88;
         }
     </style>
 </head>
@@ -35,6 +39,11 @@
     for (let i = 0; i < 64; i++) {
         const cell = document.createElement("div");
         cell.classList.add("cell");
+
+        cell.addEventListener("click", () => {
+            cell.classList.toggle("active");
+        });
+
         grid.appendChild(cell);
     }
 </script>
