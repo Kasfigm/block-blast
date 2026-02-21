@@ -258,35 +258,28 @@ function createMiniBlock(shape,slot){
   }
 
   function drop(e){
-    const x=e.changedTouches?e.changedTouches[0].clientX:e.clientX;
-    const y=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
-
     clone.remove();
     clearPreview();
-
     if(!selectedBlock) return;
 
-    const rect=grid.getBoundingClientRect();
-    const cellWidth = rect.width/size;
-    const cellHeight = rect.height/size;
+    const rect = grid.getBoundingClientRect();
+    const cellWidth = rect.width / size;
+    const cellHeight = rect.height / size;
 
-    // posisi paling atas clone
-    let minRow = size, minCol = size;
-    for(let offset of shape){
-      const r=Math.floor(offset/3);
-      const c=offset%3;
-      minRow = Math.min(minRow, Math.floor((y - rect.top)/cellHeight)-r);
-      minCol = Math.min(minCol, Math.floor((x - rect.left)/cellWidth)-c);
-    }
-    minRow = Math.max(minRow,0);
-    minCol = Math.max(minCol,0);
+    // posisi clone di grid
+    const cloneRect = mini.getBoundingClientRect();
+    const offsetX = cloneRect.left - rect.left;
+    const offsetY = cloneRect.top - rect.top;
+
+    const baseRow = Math.round(offsetY / cellHeight);
+    const baseCol = Math.round(offsetX / cellWidth);
 
     // pasang block sesuai posisi clone
     for(let offset of shape){
       const r=Math.floor(offset/3);
-      const c=Math.floor(offset%3);
-      const row = minRow + r;
-      const col = minCol + c;
+      const c=offset%3;
+      const row = baseRow + r;
+      const col = baseCol + c;
       if(row>=size || col>=size) continue;
       const idx = row*size + col;
       document.querySelector(`[data-index='${idx}']`).classList.add("filled");
