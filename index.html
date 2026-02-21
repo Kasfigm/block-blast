@@ -100,10 +100,9 @@ border-radius:4px;
 .dragging{
 position:fixed;
 pointer-events:none;
-transform:scale(1.2);
 opacity:0.95;
 z-index:999;
-will-change:transform;
+transform:scale(1.2);
 }
 </style>
 </head>
@@ -119,7 +118,7 @@ will-change:transform;
 <div class="score" id="score">0</div>
 <div class="grid"></div>
 
-<div class="blocks" id="blocks">
+<div class="blocks">
 <div class="block-slot"></div>
 <div class="block-slot"></div>
 <div class="block-slot"></div>
@@ -205,7 +204,7 @@ mini.appendChild(empty);
 }
 
 let clone=null;
-let sensitivity=2;
+let sensitivity=1.25;
 
 let lastX=0;
 let lastY=0;
@@ -230,8 +229,10 @@ const y=e.touches?e.touches[0].clientY:e.clientY;
 lastX=x;
 lastY=y;
 
-cloneX=x-30;
-cloneY=y-30;
+const rect=clone.getBoundingClientRect();
+
+cloneX=x-rect.width/2;
+cloneY=y-rect.height/2;
 
 clone.style.left=cloneX+"px";
 clone.style.top=cloneY+"px";
@@ -273,7 +274,6 @@ clearPreview();
 }
 
 function drop(){
-
 const centerX=cloneX+clone.offsetWidth/2;
 const centerY=cloneY+clone.offsetHeight/2;
 
