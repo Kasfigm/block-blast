@@ -1,65 +1,93 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Block Blast</title>
-    <style>
-        body {
-            background: #111;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: white;
-            font-family: Arial;
-        }
+<title>Block Blast</title>
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(8, 40px);
-            gap: 3px;
-            margin-top: 20px;
-        }
+<style>
+body {
+    margin:0;
+    background: linear-gradient(#c7351e,#9e2a15);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    font-family: Arial;
+    color:white;
+}
 
-        .cell {
-            width: 40px;
-            height: 40px;
-            background: #333;
-        }
+.header {
+    width:320px;
+    display:flex;
+    justify-content:space-between;
+    margin-top:15px;
+    font-size:20px;
+}
 
-        .cell.filled {
-            background: #00ff88;
-        }
+.score {
+    font-size:40px;
+    margin:10px 0;
+    font-weight:bold;
+}
 
-        .blocks {
-            display: flex;
-            gap: 20px;
-            margin-top: 30px;
-        }
+.grid {
+    display:grid;
+    grid-template-columns: repeat(8, 35px);
+    gap:4px;
+    background:#7a2b1b;
+    padding:8px;
+    border-radius:10px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
 
-        .mini-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 20px);
-            gap: 2px;
-            cursor: pointer;
-        }
+.cell {
+    width:35px;
+    height:35px;
+    background:#4b1f15;
+    border-radius:4px;
+}
 
-        .mini-cell {
-            width: 20px;
-            height: 20px;
-            background: #222;
-        }
+.cell.filled {
+    background:linear-gradient(#ffd84d,#f2b705);
+}
 
-        .mini-cell.active {
-            background: #00ff88;
-        }
+.blocks {
+    display:flex;
+    gap:25px;
+    margin-top:30px;
+}
 
-        .selected {
-            outline: 2px solid yellow;
-        }
-    </style>
+.mini-grid {
+    display:grid;
+    grid-template-columns: repeat(3, 20px);
+    gap:3px;
+    cursor:pointer;
+}
+
+.mini-cell {
+    width:20px;
+    height:20px;
+    background:#4b1f15;
+    border-radius:3px;
+}
+
+.mini-cell.active {
+    background:linear-gradient(#ffd84d,#f2b705);
+}
+
+.selected {
+    outline:3px solid #fff;
+    border-radius:6px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Block Blast 🔥</h2>
+<div class="header">
+    👑 44721
+    ⚙️
+</div>
+
+<div class="score" id="score">0</div>
 
 <div class="grid"></div>
 
@@ -68,10 +96,11 @@
 <script>
 const grid = document.querySelector(".grid");
 const blocksContainer = document.getElementById("blocks");
+const scoreText = document.getElementById("score");
 const size = 8;
 let selectedBlock = null;
+let score = 0;
 
-// ===== GRID UTAMA =====
 for (let i = 0; i < size * size; i++) {
     const cell = document.createElement("div");
     cell.classList.add("cell");
@@ -80,18 +109,16 @@ for (let i = 0; i < size * size; i++) {
     grid.appendChild(cell);
 }
 
-// ===== SHAPE BLOCK =====
 const shapes = [
-    [0, 1, 3],      // L kecil
-    [0, 1, 2],      // garis 3
-    [0, 3, 4]       // bentuk sudut
+    [0,1,3],
+    [0,1,2],
+    [0,3,4]
 ];
 
-// ===== BUAT 3 BLOCK BAWAH =====
 function generateBlocks() {
     blocksContainer.innerHTML = "";
     for (let i = 0; i < 3; i++) {
-        const shape = shapes[Math.floor(Math.random() * shapes.length)];
+        const shape = shapes[Math.floor(Math.random()*shapes.length)];
         createMiniBlock(shape);
     }
 }
@@ -103,14 +130,12 @@ function createMiniBlock(shape) {
     for (let i = 0; i < 9; i++) {
         const cell = document.createElement("div");
         cell.classList.add("mini-cell");
-        if (shape.includes(i)) {
-            cell.classList.add("active");
-        }
+        if (shape.includes(i)) cell.classList.add("active");
         mini.appendChild(cell);
     }
 
     mini.addEventListener("click", () => {
-        document.querySelectorAll(".mini-grid").forEach(b => b.classList.remove("selected"));
+        document.querySelectorAll(".mini-grid").forEach(b=>b.classList.remove("selected"));
         mini.classList.add("selected");
         selectedBlock = shape;
     });
@@ -118,35 +143,35 @@ function createMiniBlock(shape) {
     blocksContainer.appendChild(mini);
 }
 
-// ===== TARUH BLOCK =====
 function placeBlock(e) {
     if (!selectedBlock) return;
 
     const start = parseInt(e.target.dataset.index);
 
     for (let offset of selectedBlock) {
-        const rowOffset = Math.floor(offset / 3);
-        const colOffset = offset % 3;
+        const rowOffset = Math.floor(offset/3);
+        const colOffset = offset%3;
 
-        const targetIndex = start + rowOffset * size + colOffset;
+        const targetIndex = start + rowOffset*size + colOffset;
         const cell = document.querySelector(`[data-index='${targetIndex}']`);
 
-        if (!cell || cell.classList.contains("filled")) {
-            return;
-        }
+        if (!cell || cell.classList.contains("filled")) return;
     }
 
     for (let offset of selectedBlock) {
-        const rowOffset = Math.floor(offset / 3);
-        const colOffset = offset % 3;
+        const rowOffset = Math.floor(offset/3);
+        const colOffset = offset%3;
 
-        const targetIndex = start + rowOffset * size + colOffset;
+        const targetIndex = start + rowOffset*size + colOffset;
         const cell = document.querySelector(`[data-index='${targetIndex}']`);
         cell.classList.add("filled");
+        score += 5;
     }
 
+    scoreText.textContent = score;
+
     selectedBlock = null;
-    document.querySelectorAll(".mini-grid").forEach(b => b.classList.remove("selected"));
+    document.querySelectorAll(".mini-grid").forEach(b=>b.classList.remove("selected"));
 }
 
 generateBlocks();
