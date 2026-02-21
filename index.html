@@ -207,9 +207,8 @@ function createMiniBlock(shape,slot){
   }
 
   let clone=null;
-  let sensitivity=2;
-  let offsetX=0;
-  let offsetY=0;
+  let lastX=0, lastY=0;
+  let sensitivity = 2.5; // ubah 1.5-3 untuk sensi
 
   mini.addEventListener("mousedown",startDrag);
   mini.addEventListener("touchstart",startDrag,{passive:false});
@@ -226,11 +225,11 @@ function createMiniBlock(shape,slot){
     clone.classList.add("dragging");
     document.body.appendChild(clone);
 
-    offsetX = x - mini.getBoundingClientRect().left;
-    offsetY = y - mini.getBoundingClientRect().top;
+    lastX = x;
+    lastY = y;
 
-    clone.style.left = x - offsetX + "px";
-    clone.style.top = y - offsetY + "px";
+    clone.style.left = x - mini.offsetWidth/2 + "px";
+    clone.style.top = y - mini.offsetHeight/2 + "px";
 
     document.addEventListener("mousemove",moveAt);
     document.addEventListener("touchmove",moveAt,{passive:false});
@@ -243,67 +242,72 @@ function createMiniBlock(shape,slot){
     const x=e.touches?e.touches[0].clientX:e.clientX;
     const y=e.touches?e.touches[0].clientY:e.clientY;
 
-    clone.style.left = x - offsetX + "px";
-    clone.style.top  = y - offsetY + "px";
+    const dx = (x - lastX) * sensitivity;
+    const dy = (y - lastY) * sensitivity;
+
+    clone.style.left = clone.offsetLeft + dx + "px";
+    clone.style.top  = clone.offsetTop + dy + "px";
+
+    lastX = x;
+    lastY = y;
 
     const target=document.elementFromPoint(x,y);
     if(target && target.classList.contains("cell")){
       showPreview(parseInt(target.dataset.index));
-    }else clearPreview();
+    } else clearPreview();
   }
 
   function drop(e){
     const x=e.changedTouches?e.changedTouches[0].clientX:e.clientX;
     const y=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
 
-    const target=document.elementFromPoint(x,y);
     clone.remove();
     clearPreview();
 
-    // snap ke posisi clone
-    if(target && target.classList.contains("cell")){
-      const rect=grid.getBoundingClientRect();
-      const cellWidth = rect.width / size;
-      const cellHeight = rect.height / size;
+    if(!selectedBlock) return;
 
-      // ambil posisi paling atas dari clone
-      let minRow= size, minCol= size;
-      for(let offset of shape){
-        const r=Math.floor(offset/3);
-        const c=offset%3;
-        minRow = Math.min(minRow, Math.floor((y - rect.top)/cellHeight)-r);
-        minCol = Math.min(minCol, Math.floor((x - rect.left)/cellWidth)-c);
-      }
-      minRow = Math.max(minRow,0);
-      minCol = Math.max(minCol,0);
+    const rect=grid.getBoundingClientRect();
+    const cellWidth = rect.width/size;
+    const cellHeight = rect.height/size;
 
-      // pasang block sesuai posisi clone
-      for(let offset of shape){
-        const r=Math.floor(offset/3);
-        const c=offset%3;
-        const row = minRow + r;
-        const col = minCol + c;
-        if(row>=size || col>=size) continue;
-        const idx = row*size + col;
-        document.querySelector(`[data-index='${idx}']`).classList.add("filled");
-        score+=5;
-      }
-
-      scoreText.textContent=score;
-      if(score>bestScore){
-        bestScore=score;
-        localStorage.setItem("bestScore",bestScore);
-        bestScoreText.textContent=bestScore;
-      }
-
-      if(currentMini){
-        currentMini.remove();
-        blockCount--;
-      }
-      if(blockCount<=0) generateBlocks();
-      selectedBlock=null;
-      currentMini=null;
+    // posisi paling atas clone
+    let minRow = size, minCol = size;
+    for(let offset of shape){
+      const r=Math.floor(offset/3);
+      const c=offset%3;
+      minRow = Math.min(minRow, Math.floor((y - rect.top)/cellHeight)-r);
+      minCol = Math.min(minCol, Math.floor((x - rect.left)/cellWidth)-c);
     }
+    minRow = Math.max(minRow,0);
+    minCol = Math.max(minCol,0);
+
+    // pasang block sesuai posisi clone
+    for(let offset of shape){
+      const r=Math.floor(offset/3);
+      const c=Math.floor(offset%3);
+      const row = minRow + r;
+      const col = minCol + c;
+      if(row>=size || col>=size) continue;
+      const idx = row*size + col;
+      document.querySelector(`[data-index='${idx}']`).classList.add("filled");
+      score+=5;
+    }
+
+    scoreText.textContent=score;
+    if(score>bestScore){
+      bestScore=score;
+      localStorage.setItem("bestScore",bestScore);
+      bestScoreText.textContent=bestScore;
+    }
+
+    if(currentMini){
+      currentMini.remove();
+      blockCount--;
+    }
+    if(blockCount<=0) generateBlocks();
+
+    selectedBlock=null;
+    currentMini=null;
 
     document.removeEventListener("mousemove",moveAt);
     document.removeEventListener("touchmove",moveAt);
