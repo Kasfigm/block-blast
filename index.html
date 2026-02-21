@@ -48,7 +48,6 @@ body{
   aspect-ratio:1;
   background:#2e3f33;
   border-radius:14px;
-  padding:0; /* 🔥 hapus padding supaya posisi block pas */
   position:relative;
 }
 
@@ -57,7 +56,7 @@ body{
   aspect-ratio:1;
   background:#1f2c23;
   border-radius:5px;
-  position:relative; /* penting supaya z-index preview benar */
+  position:relative;
   z-index:1;
 }
 
@@ -70,7 +69,7 @@ body{
 
 .cell.preview{
   background:rgba(143,227,136,0.35);
-  z-index:10; /* selalu di atas filled */
+  z-index:10;
   position:relative;
 }
 
@@ -108,7 +107,7 @@ body{
   pointer-events:none;
   transform:scale(1.2);
   opacity:0.95;
-  z-index:999; /* drag paling atas */
+  z-index:999;
 }
 </style>
 </head>
@@ -146,7 +145,7 @@ let blockCount=0;
 let bestScore=localStorage.getItem("bestScore")||0;
 bestScoreText.textContent=bestScore;
 
-// Buat grid
+// buat grid
 for(let i=0;i<size*size;i++){
   const cell=document.createElement("div");
   cell.classList.add("cell");
@@ -175,7 +174,6 @@ function showPreview(index){
   const startCol=index%size;
   let valid=true;
   let cells=[];
-
   for(let offset of selectedBlock){
     const r=Math.floor(offset/3);
     const c=offset%3;
@@ -187,7 +185,6 @@ function showPreview(index){
     if(!cell||cell.classList.contains("filled")){valid=false;break;}
     cells.push(cell);
   }
-
   if(valid)cells.forEach(c=>c.classList.add("preview"));
 }
 
@@ -211,10 +208,8 @@ function createMiniBlock(shape,slot){
 
   let clone=null;
   let sensitivity=2;
-  let lastX=0;
-  let lastY=0;
-  let posX=0;
-  let posY=0;
+  let offsetX=0;
+  let offsetY=0;
 
   mini.addEventListener("mousedown",startDrag);
   mini.addEventListener("touchstart",startDrag,{passive:false});
@@ -224,21 +219,18 @@ function createMiniBlock(shape,slot){
     selectedBlock=shape;
     currentMini=mini;
 
+    const x=e.touches?e.touches[0].clientX:e.clientX;
+    const y=e.touches?e.touches[0].clientY:e.clientY;
+
     clone=mini.cloneNode(true);
     clone.classList.add("dragging");
     document.body.appendChild(clone);
 
-    const x=e.touches?e.touches[0].clientX:e.clientX;
-    const y=e.touches?e.touches[0].clientY:e.clientY;
+    offsetX = x - mini.getBoundingClientRect().left;
+    offsetY = y - mini.getBoundingClientRect().top;
 
-    posX = x-30;
-    posY = y-30;
-
-    clone.style.left = posX + "px";
-    clone.style.top  = posY + "px";
-
-    lastX = x;
-    lastY = y;
+    clone.style.left = x - offsetX + "px";
+    clone.style.top = y - offsetY + "px";
 
     document.addEventListener("mousemove",moveAt);
     document.addEventListener("touchmove",moveAt,{passive:false});
@@ -251,20 +243,11 @@ function createMiniBlock(shape,slot){
     const x=e.touches?e.touches[0].clientX:e.clientX;
     const y=e.touches?e.touches[0].clientY:e.clientY;
 
-    const dx=(x-lastX)*sensitivity;
-    const dy=(y-lastY)*sensitivity;
-
-    posX += dx;
-    posY += dy;
-
-    clone.style.left = posX + "px";
-    clone.style.top  = posY + "px";
-
-    lastX = x;
-    lastY = y;
+    clone.style.left = x - offsetX + "px";
+    clone.style.top  = y - offsetY + "px";
 
     const target=document.elementFromPoint(x,y);
-    if(target&&target.classList.contains("cell")){
+    if(target && target.classList.contains("cell")){
       showPreview(parseInt(target.dataset.index));
     }else clearPreview();
   }
@@ -274,12 +257,52 @@ function createMiniBlock(shape,slot){
     const y=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
 
     const target=document.elementFromPoint(x,y);
-
     clone.remove();
     clearPreview();
 
-    if(target&&target.classList.contains("cell")){
-      placeBlock(target);
+    // snap ke posisi clone
+    if(target && target.classList.contains("cell")){
+      const rect=grid.getBoundingClientRect();
+      const cellWidth = rect.width / size;
+      const cellHeight = rect.height / size;
+
+      // ambil posisi paling atas dari clone
+      let minRow= size, minCol= size;
+      for(let offset of shape){
+        const r=Math.floor(offset/3);
+        const c=offset%3;
+        minRow = Math.min(minRow, Math.floor((y - rect.top)/cellHeight)-r);
+        minCol = Math.min(minCol, Math.floor((x - rect.left)/cellWidth)-c);
+      }
+      minRow = Math.max(minRow,0);
+      minCol = Math.max(minCol,0);
+
+      // pasang block sesuai posisi clone
+      for(let offset of shape){
+        const r=Math.floor(offset/3);
+        const c=offset%3;
+        const row = minRow + r;
+        const col = minCol + c;
+        if(row>=size || col>=size) continue;
+        const idx = row*size + col;
+        document.querySelector(`[data-index='${idx}']`).classList.add("filled");
+        score+=5;
+      }
+
+      scoreText.textContent=score;
+      if(score>bestScore){
+        bestScore=score;
+        localStorage.setItem("bestScore",bestScore);
+        bestScoreText.textContent=bestScore;
+      }
+
+      if(currentMini){
+        currentMini.remove();
+        blockCount--;
+      }
+      if(blockCount<=0) generateBlocks();
+      selectedBlock=null;
+      currentMini=null;
     }
 
     document.removeEventListener("mousemove",moveAt);
@@ -289,55 +312,6 @@ function createMiniBlock(shape,slot){
   }
 
   slot.appendChild(mini);
-}
-
-function placeBlock(cellTarget){
-  if(!selectedBlock)return;
-
-  const start=parseInt(cellTarget.dataset.index);
-  const startRow=Math.floor(start/size);
-  const startCol=start%size;
-
-  for(let offset of selectedBlock){
-    const r=Math.floor(offset/3);
-    const c=offset%3;
-    const newRow=startRow+r;
-    const newCol=startCol+c;
-    if(newRow>=size||newCol>=size)return;
-    const idx=newRow*size+newCol;
-    const cell=document.querySelector(`[data-index='${idx}']`);
-    if(!cell||cell.classList.contains("filled"))return;
-  }
-
-  for(let offset of selectedBlock){
-    const r=Math.floor(offset/3);
-    const c=offset%3;
-    const newRow=startRow+r;
-    const newCol=startCol+c;
-    const idx=newRow*size+newCol;
-    document.querySelector(`[data-index='${idx}']`).classList.add("filled");
-    score+=5;
-  }
-
-  scoreText.textContent=score;
-
-  if(score>bestScore){
-    bestScore=score;
-    localStorage.setItem("bestScore",bestScore);
-    bestScoreText.textContent=bestScore;
-  }
-
-  if(currentMini){
-    currentMini.remove();
-    blockCount--;
-  }
-
-  if(blockCount<=0){
-    generateBlocks();
-  }
-
-  selectedBlock=null;
-  currentMini=null;
 }
 
 generateBlocks();
