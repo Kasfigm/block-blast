@@ -1,9 +1,7 @@
-
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Block Blast</title>
 
 <style>
@@ -31,7 +29,7 @@ body {
     display:flex;
     justify-content:space-between;
     margin-top:15px;
-    font consideration-size:18px;
+    font-size:18px;
 }
 
 .score {
@@ -72,21 +70,18 @@ body {
 }
 
 .mini-grid {
-    display:grid;
+    display:inline-grid;
     grid-template-columns: repeat(3, 18px);
     gap:3px;
     cursor:pointer;
+    padding:4px;
 }
 
 .mini-cell {
     width:18px;
     height:18px;
-    background:#4b1f15;
-    border-radius:3px;
-}
-
-.mini-cell.active {
     background:linear-gradient(#ffd84d,#f2b705);
+    border-radius:3px;
 }
 
 .selected {
@@ -153,10 +148,17 @@ function createMiniBlock(shape) {
     mini.classList.add("mini-grid");
 
     for (let i = 0; i < 9; i++) {
-        const cell = document.createElement("div");
-        cell.classList.add("mini-cell");
-        if (shape.includes(i)) cell.classList.add("active");
-        mini.appendChild(cell);
+        if (shape.includes(i)) {
+            const cell = document.createElement("div");
+            cell.classList.add("mini-cell");
+            mini.appendChild(cell);
+        } else {
+            const empty = document.createElement("div");
+            empty.style.width="18px";
+            empty.style.height="18px";
+            empty.style.visibility="hidden";
+            mini.appendChild(empty);
+        }
     }
 
     mini.addEventListener("click", () => {
@@ -203,6 +205,8 @@ function placeBlock(e) {
 
     selectedBlock = null;
     document.querySelectorAll(".mini-grid").forEach(b=>b.classList.remove("selected"));
+
+    generateBlocks();
 }
 
 generateBlocks();
