@@ -6,46 +6,88 @@
         body {
             background: #111;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            color: white;
+            font-family: Arial;
         }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(8, 40px);
             gap: 3px;
+            margin-top: 20px;
         }
 
         .cell {
             width: 40px;
             height: 40px;
-            background: #444;
-            cursor: pointer;
+            background: #333;
         }
 
-        .cell.active {
+        .cell.filled {
             background: #00ff88;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
 
+<h2>Block Blast 🔥</h2>
+<button onclick="selectBlock()">Ambil Block</button>
+
 <div class="grid"></div>
 
 <script>
-    const grid = document.querySelector(".grid");
+const grid = document.querySelector(".grid");
+const size = 8;
+let selectedBlock = null;
 
-    for (let i = 0; i < 64; i++) {
-        const cell = document.createElement("div");
-        cell.classList.add("cell");
+// bikin grid
+for (let i = 0; i < size * size; i++) {
+    const cell = document.createElement("div");
+    cell.classList.add("cell");
+    cell.dataset.index = i;
+    cell.addEventListener("click", placeBlock);
+    grid.appendChild(cell);
+}
 
-        cell.addEventListener("click", () => {
-            cell.classList.toggle("active");
-        });
+// bentuk block (L shape)
+const blockShape = [0, 1, size]; 
 
-        grid.appendChild(cell);
+function selectBlock() {
+    selectedBlock = blockShape;
+    alert("Block dipilih! Klik grid untuk taruh.");
+}
+
+function placeBlock(e) {
+    if (!selectedBlock) return;
+
+    const start = parseInt(e.target.dataset.index);
+
+    for (let offset of selectedBlock) {
+        const cellIndex = start + offset;
+        const cell = document.querySelector(`[data-index='${cellIndex}']`);
+
+        if (!cell || cell.classList.contains("filled")) {
+            alert("Tidak bisa taruh di sini!");
+            return;
+        }
     }
+
+    for (let offset of selectedBlock) {
+        const cellIndex = start + offset;
+        const cell = document.querySelector(`[data-index='${cellIndex}']`);
+        cell.classList.add("filled");
+    }
+
+    selectedBlock = null;
+}
 </script>
 
 </body>
