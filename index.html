@@ -84,9 +84,12 @@ body {
     border-radius:3px;
 }
 
-.selected {
-    outline:3px solid #fff;
-    border-radius:6px;
+.dragging {
+    position:fixed;
+    pointer-events:none;
+    transform:scale(1.2);
+    opacity:0.9;
+    z-index:999;
 }
 </style>
 </head>
@@ -125,7 +128,6 @@ for (let i = 0; i < size * size; i++) {
     const cell = document.createElement("div");
     cell.classList.add("cell");
     cell.dataset.index = i;
-    cell.addEventListener("click", placeBlock);
     grid.appendChild(cell);
 }
 
@@ -161,19 +163,60 @@ function createMiniBlock(shape) {
         }
     }
 
-    mini.addEventListener("click", () => {
-        document.querySelectorAll(".mini-grid").forEach(b=>b.classList.remove("selected"));
-        mini.classList.add("selected");
+    let clone = null;
+
+    mini.addEventListener("mousedown", startDrag);
+    mini.addEventListener("touchstart", startDrag);
+
+    function startDrag(e){
         selectedBlock = shape;
-    });
+
+        clone = mini.cloneNode(true);
+        clone.classList.add("dragging");
+        document.body.appendChild(clone);
+
+        moveAt(e);
+
+        document.addEventListener("mousemove", moveAt);
+        document.addEventListener("touchmove", moveAt);
+
+        document.addEventListener("mouseup", drop);
+        document.addEventListener("touchend", drop);
+    }
+
+    function moveAt(e){
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+
+        clone.style.left = x - 30 + "px";
+        clone.style.top = y - 30 + "px";
+    }
+
+    function drop(e){
+        clone.remove();
+
+        const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+        const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+        const target = document.elementFromPoint(x,y);
+
+        if(target && target.classList.contains("cell")){
+            placeBlock(target);
+        }
+
+        document.removeEventListener("mousemove", moveAt);
+        document.removeEventListener("touchmove", moveAt);
+        document.removeEventListener("mouseup", drop);
+        document.removeEventListener("touchend", drop);
+    }
 
     blocksContainer.appendChild(mini);
 }
 
-function placeBlock(e) {
+function placeBlock(cellTarget) {
     if (!selectedBlock) return;
 
-    const start = parseInt(e.target.dataset.index);
+    const start = parseInt(cellTarget.dataset.index);
 
     for (let offset of selectedBlock) {
         const rowOffset = Math.floor(offset/3);
@@ -204,8 +247,6 @@ function placeBlock(e) {
     }
 
     selectedBlock = null;
-    document.querySelectorAll(".mini-grid").forEach(b=>b.classList.remove("selected"));
-
     generateBlocks();
 }
 
