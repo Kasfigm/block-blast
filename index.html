@@ -1,25 +1,37 @@
+
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Block Blast</title>
 
 <style>
 body {
     margin:0;
+    min-height:100vh;
     background: linear-gradient(#c7351e,#9e2a15);
     display:flex;
-    flex-direction:column;
-    align-items:center;
+    justify-content:center;
+    align-items:flex-start;
     font-family: Arial;
     color:white;
 }
 
+.game {
+    width:100%;
+    max-width:400px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
 .header {
-    width:320px;
+    width:100%;
     display:flex;
     justify-content:space-between;
     margin-top:15px;
-    font-size:20px;
+    font consideration-size:18px;
 }
 
 .score {
@@ -30,17 +42,20 @@ body {
 
 .grid {
     display:grid;
-    grid-template-columns: repeat(8, 35px);
+    grid-template-columns: repeat(8, 1fr);
     gap:4px;
+    width:90%;
+    max-width:320px;
+    aspect-ratio:1;
     background:#7a2b1b;
     padding:8px;
-    border-radius:10px;
+    border-radius:12px;
     box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
 }
 
 .cell {
-    width:35px;
-    height:35px;
+    width:100%;
+    aspect-ratio:1;
     background:#4b1f15;
     border-radius:4px;
 }
@@ -51,20 +66,21 @@ body {
 
 .blocks {
     display:flex;
-    gap:25px;
-    margin-top:30px;
+    gap:20px;
+    margin-top:25px;
+    margin-bottom:30px;
 }
 
 .mini-grid {
     display:grid;
-    grid-template-columns: repeat(3, 20px);
+    grid-template-columns: repeat(3, 18px);
     gap:3px;
     cursor:pointer;
 }
 
 .mini-cell {
-    width:20px;
-    height:20px;
+    width:18px;
+    height:18px;
     background:#4b1f15;
     border-radius:3px;
 }
@@ -82,6 +98,8 @@ body {
 
 <body>
 
+<div class="game">
+
 <div class="header">
     👑 Best: <span id="bestScore">0</span>
     ⚙️
@@ -93,6 +111,8 @@ body {
 
 <div class="blocks" id="blocks"></div>
 
+</div>
+
 <script>
 const grid = document.querySelector(".grid");
 const blocksContainer = document.getElementById("blocks");
@@ -103,11 +123,9 @@ const size = 8;
 let selectedBlock = null;
 let score = 0;
 
-// ===== LOAD BEST SCORE =====
 let bestScore = localStorage.getItem("bestScore") || 0;
 bestScoreText.textContent = bestScore;
 
-// ===== GRID =====
 for (let i = 0; i < size * size; i++) {
     const cell = document.createElement("div");
     cell.classList.add("cell");
@@ -177,7 +195,6 @@ function placeBlock(e) {
 
     scoreText.textContent = score;
 
-    // ===== UPDATE BEST SCORE =====
     if (score > bestScore) {
         bestScore = score;
         localStorage.setItem("bestScore", bestScore);
